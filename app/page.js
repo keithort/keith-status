@@ -50,8 +50,24 @@ function getStatus(date, seed = '') {
   const dow = date.getDay();
   const ds = toDateStr(date);
   if (dow === 0 || dow === 6 || HOLIDAYS.has(ds)) return 'operational';
-  const hash = djb2(ds + seed);
-  return (hash % 10) < 3 ? 'outage' : 'degraded';
+
+  // Anchor to Monday of this week
+  const weekAnchor = new Date(date);
+  weekAnchor.setDate(date.getDate() - (dow - 1));
+  const weekKey = toDateStr(weekAnchor) + seed;
+
+  const wh = djb2(weekKey);
+  const redCount = (wh % 3) + 1; // 1–3 red days per week
+
+  // Deterministic shuffle of Mon–Fri, pick first redCount as outage days
+  const days = [1, 2, 3, 4, 5];
+  for (let i = days.length - 1; i > 0; i--) {
+    const j = djb2(weekKey + String(i)) % (i + 1);
+    [days[i], days[j]] = [days[j], days[i]];
+  }
+  const redDays = new Set(days.slice(0, redCount));
+
+  return redDays.has(dow) ? 'outage' : 'degraded';
 }
 
 const COMPONENTS = [
@@ -63,6 +79,8 @@ const COMPONENTS = [
   { name: 'Social Battery',             seed: 'social' },
   { name: 'Task Prioritization Engine', seed: 'tasks' },
   { name: 'Will to Open Slack',         seed: 'slack' },
+  { name: 'Meme Generation Service',    seed: 'memes',   alwaysOperational: true },
+  { name: 'Sarcasm Engine',             seed: 'sarcasm', alwaysOperational: true },
 ];
 
 const INCIDENT_TITLES = {
@@ -176,8 +194,8 @@ export default function StatusPage() {
         <section className="mb-8">
           <SectionLabel>Components</SectionLabel>
           <div className="bg-slate-800 rounded-lg border border-slate-700 divide-y divide-slate-700">
-            {COMPONENTS.map(({ name, seed }) => {
-              const st = getStatus(today, seed);
+            {COMPONENTS.map(({ name, seed, alwaysOperational }) => {
+              const st = alwaysOperational ? 'operational' : getStatus(today, seed);
               const c = STATUS[st];
               return (
                 <div key={name} className="flex items-center justify-between px-4 py-3">
