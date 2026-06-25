@@ -206,11 +206,19 @@ export default function StatusPage() {
                   <span className="text-sm font-mono text-slate-200">{name}</span>
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
-                    <span className={`text-xs font-mono ${c.text}`}>{c.label}</span>
+                    <span className={`text-xs font-mono ${c.text} hidden sm:inline`}>{c.label}</span>
                   </div>
                 </div>
               );
             })}
+          </div>
+          <div className="flex items-center gap-5 mt-3 px-1">
+            {['operational', 'degraded', 'outage'].map((k) => (
+              <span key={k} className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
+                <span className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${STATUS[k].dot}`} />
+                {STATUS[k].label}
+              </span>
+            ))}
           </div>
         </section>
 
