@@ -78,7 +78,7 @@ const STATUS = {
     label:  'Operational',
     banner: 'All Systems Operational — Offline Mode Active',
     emoji:  '🟢',
-    pill:   'bg-green-600 text-white',
+    pill:   'bg-green-700 text-white',
     text:   'text-green-400',
     dot:    'bg-green-500',
     square: 'bg-green-600',
@@ -88,7 +88,7 @@ const STATUS = {
     label:  'Degraded Performance',
     banner: 'Degraded Performance — Workday Detected',
     emoji:  '🟡',
-    pill:   'bg-yellow-600 text-white',
+    pill:   'bg-yellow-700 text-white',
     text:   'text-yellow-400',
     dot:    'bg-yellow-500',
     square: 'bg-yellow-600',
@@ -146,14 +146,18 @@ export default function StatusPage() {
   const fmtShort = (d) =>
     d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+  const operationalDays = gridDays.filter(d => getStatus(d) === 'operational').length;
+  const degradedDays   = gridDays.filter(d => getStatus(d) === 'degraded').length;
+  const outageDays     = gridDays.filter(d => getStatus(d) === 'outage').length;
+
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
+    <main id="main-content" className="min-h-screen bg-slate-900 text-slate-100">
       <div className="max-w-2xl mx-auto px-6 py-10">
 
         {/* ── Header ── */}
         <header className="flex items-start justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight font-mono">Keith v1.0</h1>
+            <h1 className="text-2xl font-bold tracking-tight font-mono text-balance">Keith v1.0</h1>
             <p className="text-slate-400 text-sm mt-1 font-mono tracking-wide">Personal Uptime Monitor</p>
           </div>
           <span className={`mt-1 px-3 py-1 rounded-full text-xs font-mono font-semibold ${s.pill}`}>
@@ -196,7 +200,11 @@ export default function StatusPage() {
         <section className="mb-8">
           <SectionLabel>90-Day Uptime History</SectionLabel>
           <div className="bg-slate-800 rounded-lg border border-slate-700 px-4 py-4">
-            <div className="flex flex-wrap gap-[3px]">
+            <div
+              className="flex flex-wrap gap-[3px]"
+              role="img"
+              aria-label={`90-day uptime history: ${operationalDays} operational, ${degradedDays} degraded, ${outageDays} outage`}
+            >
               {gridDays.map((d, i) => {
                 const st = getStatus(d);
                 const c = STATUS[st];
@@ -205,6 +213,7 @@ export default function StatusPage() {
                   <div
                     key={i}
                     className="relative"
+                    aria-hidden="true"
                     onMouseEnter={() => setTooltip({ i, date: fmtShort(d), status: st })}
                     onMouseLeave={() => setTooltip(null)}
                   >
@@ -212,7 +221,7 @@ export default function StatusPage() {
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
                         <div className="bg-slate-700 border border-slate-600 text-slate-100 text-xs font-mono rounded px-2 py-1 whitespace-nowrap shadow-xl">
                           <span className="text-slate-300">{tooltip.date}</span>
-                          <span className="text-slate-500 mx-1">—</span>
+                          <span className="text-slate-400 mx-1">—</span>
                           <span className={STATUS[tooltip.status].text}>{STATUS[tooltip.status].label}</span>
                         </div>
                         <div className="flex justify-center">
@@ -254,7 +263,7 @@ export default function StatusPage() {
                     <span className="font-mono text-sm font-semibold text-slate-100 leading-snug">{title}</span>
                     <span className={`text-xs font-mono shrink-0 mt-0.5 ${c.text}`}>{c.label}</span>
                   </div>
-                  <p className="text-xs font-mono text-slate-500 mt-1">
+                  <p className="text-xs font-mono text-slate-400 mt-1">
                     {fmtShort(d)}
                     {isToday ? ' · Ongoing' : ' · Resolved'}
                     {' · Auto-generated incident report'}
@@ -267,14 +276,14 @@ export default function StatusPage() {
 
         {/* ── Footer ── */}
         <footer className="border-t border-slate-700 pt-6 text-center space-y-1">
-          <p className="text-xs font-mono text-slate-500">
+          <p className="text-xs font-mono text-slate-400">
             No scheduled maintenance · Uptime resets every Saturday at 00:00 local time
           </p>
-          <p className="text-xs font-mono text-slate-600 mt-1">
+          <p className="text-xs font-mono text-slate-400 mt-1">
             Keith v1.0 · Personal Uptime Monitor · {today.getFullYear()}
           </p>
         </footer>
       </div>
-    </div>
+    </main>
   );
 }
