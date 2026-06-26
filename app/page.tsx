@@ -30,7 +30,34 @@ const HOLIDAYS = new Set([
   '2026-12-25', // Christmas
 ]);
 
-function djb2(str) {
+type StatusKey = 'operational' | 'degraded' | 'outage';
+
+type StatusConfig = {
+  label:  string;
+  banner: string;
+  emoji:  string;
+  pill:   string;
+  text:   string;
+  dot:    string;
+  square: string;
+  card:   string;
+};
+
+type ComponentDef = {
+  name:               string;
+  seed:               string;
+  alwaysOperational?: boolean;
+  alwaysDegraded?:    boolean;
+  nonWorkDayStatus?:  StatusKey;
+};
+
+type TooltipState = {
+  i:      number;
+  date:   string;
+  status: StatusKey;
+} | null;
+
+function djb2(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
     hash = (((hash << 5) + hash) + str.charCodeAt(i)) & 0xffffffff;
@@ -38,15 +65,14 @@ function djb2(str) {
   return Math.abs(hash);
 }
 
-function toDateStr(date) {
+function toDateStr(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 
-// Returns 'operational' | 'degraded' | 'outage'
-function getStatus(date, seed = '') {
+function getStatus(date: Date, seed = ''): StatusKey {
   const dow = date.getDay();
   const ds = toDateStr(date);
   if (dow === 0 || dow === 6 || HOLIDAYS.has(ds)) return 'operational';
@@ -70,20 +96,34 @@ function getStatus(date, seed = '') {
   return redDays.has(dow) ? 'outage' : 'degraded';
 }
 
-const COMPONENTS = [
-  { name: 'Motivation API',             seed: 'motivation' },
-  { name: 'Focus Engine',               seed: 'focus' },
-  { name: 'Caffeine Subsystem',         seed: 'caffeine' },
-  { name: 'Meeting Tolerance Service',  seed: 'meetings' },
-  { name: 'Email Response Queue',       seed: 'email' },
-  { name: 'Social Battery',             seed: 'social' },
-  { name: 'Task Prioritization Engine', seed: 'tasks' },
-  { name: 'Will to Open Slack',         seed: 'slack' },
-  { name: 'Meme Generation Service',    seed: 'memes',   alwaysOperational: true },
-  { name: 'Sarcasm Engine',             seed: 'sarcasm', alwaysOperational: true },
+const COMPONENTS: ComponentDef[] = [
+  { name: 'Motivation API',                   seed: 'motivation' },
+  { name: 'Focus Engine',                     seed: 'focus' },
+  { name: 'Caffeine Subsystem',               seed: 'caffeine' },
+  { name: 'Meeting Tolerance Service',        seed: 'meetings' },
+  { name: 'Email Response Queue',             seed: 'email',    nonWorkDayStatus: 'outage' },
+  { name: 'Social Battery',                   seed: 'social' },
+  { name: 'Task Prioritization Engine',       seed: 'tasks' },
+  { name: 'Will to Open Slack',               seed: 'slack',    nonWorkDayStatus: 'outage' },
+  { name: 'Meme Generation Service',          seed: 'memes',    alwaysOperational: true },
+  { name: 'Sarcasm Engine',                   seed: 'sarcasm',  alwaysOperational: true },
+  { name: 'Westhafer Sarcasm Load Balancing', seed: 'westhafer', alwaysDegraded: true },
 ];
 
-const INCIDENT_TITLES = {
+function isNonWorkDay(date: Date): boolean {
+  const dow = date.getDay();
+  return dow === 0 || dow === 6 || HOLIDAYS.has(toDateStr(date));
+}
+
+function getComponentStatus(component: ComponentDef, date: Date): StatusKey {
+  const { seed, alwaysOperational, alwaysDegraded, nonWorkDayStatus } = component;
+  if (alwaysOperational) return 'operational';
+  if (alwaysDegraded) return 'degraded';
+  if (nonWorkDayStatus && isNonWorkDay(date)) return nonWorkDayStatus;
+  return getStatus(date, seed);
+}
+
+const INCIDENT_TITLES: Record<number, string> = {
   1: 'Monday.exe failed to initialize',
   2: 'Motivation dependency resolved but unstable',
   3: 'Hump day anomaly — brief coherence detected',
@@ -91,7 +131,7 @@ const INCIDENT_TITLES = {
   5: 'Graceful degradation into weekend pre-load',
 };
 
-const STATUS = {
+const STATUS: Record<StatusKey, StatusConfig> = {
   operational: {
     label:  'Operational',
     banner: 'All Systems Operational — Offline Mode Active',
@@ -124,7 +164,7 @@ const STATUS = {
   },
 };
 
-function SectionLabel({ children }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-widest mb-3">
       {children}
@@ -133,7 +173,7 @@ function SectionLabel({ children }) {
 }
 
 export default function StatusPage() {
-  const [tooltip, setTooltip] = useState(null);
+  const [tooltip, setTooltip] = useState<TooltipState>(null);
 
   const today = new Date();
   const overallStatus = getStatus(today);
@@ -147,7 +187,7 @@ export default function StatusPage() {
   });
 
   // Last 5 workdays for incidents (working backwards from today, inclusive)
-  const incidents = [];
+  const incidents: Date[] = [];
   const cur = new Date(today);
   while (incidents.length < 5) {
     const dow = cur.getDay();
@@ -158,10 +198,10 @@ export default function StatusPage() {
     cur.setDate(cur.getDate() - 1);
   }
 
-  const fmtLong = (d) =>
+  const fmtLong = (d: Date) =>
     d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const fmtShort = (d) =>
+  const fmtShort = (d: Date) =>
     d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   const operationalDays = gridDays.filter(d => getStatus(d) === 'operational').length;
@@ -198,8 +238,9 @@ export default function StatusPage() {
         <section className="mb-8">
           <SectionLabel>Components</SectionLabel>
           <div className="bg-slate-800 rounded-lg border border-slate-700 divide-y divide-slate-700">
-            {COMPONENTS.map(({ name, seed, alwaysOperational }) => {
-              const st = alwaysOperational ? 'operational' : getStatus(today, seed);
+            {COMPONENTS.map((component) => {
+              const { name } = component;
+              const st = getComponentStatus(component, today);
               const c = STATUS[st];
               return (
                 <div key={name} className="flex items-center justify-between px-4 py-3">
@@ -213,7 +254,7 @@ export default function StatusPage() {
             })}
           </div>
           <div className="flex items-center gap-5 mt-3 px-1">
-            {['operational', 'degraded', 'outage'].map((k) => (
+            {(['operational', 'degraded', 'outage'] as StatusKey[]).map((k) => (
               <span key={k} className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
                 <span className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${STATUS[k].dot}`} />
                 {STATUS[k].label}
@@ -263,7 +304,7 @@ export default function StatusPage() {
               })}
             </div>
             <div className="flex items-center gap-5 mt-3 pt-3 border-t border-slate-700">
-              {['operational', 'degraded', 'outage'].map((k) => (
+              {(['operational', 'degraded', 'outage'] as StatusKey[]).map((k) => (
                 <span key={k} className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
                   <span className={`w-2.5 h-2.5 rounded-sm inline-block ${STATUS[k].square}`} />
                   {STATUS[k].label}
