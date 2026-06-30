@@ -44,6 +44,9 @@ function getComponentStatus(component: ComponentDef, date: Date, phase: WorkPhas
   return getStatus(date, seed, 'working');
 }
 
+const fmtLong = (d: Date) =>
+  d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-widest mb-3">
@@ -59,8 +62,6 @@ export default function StatusPage() {
   const overallStatus = getStatus(today, '', phase);
   const s = STATUS[overallStatus];
 
-  const fmtLong = (d: Date) =>
-    d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // Rolling 90-day grid, oldest → newest
   const gridDateStrings = Array.from({ length: 90 }, (_, i) => {

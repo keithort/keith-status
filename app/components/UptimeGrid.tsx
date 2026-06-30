@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { getStatus, fmtShort, STATUS, type StatusKey } from '@/app/lib/status';
 
 type TooltipState = {
@@ -17,11 +17,15 @@ type Props = {
 export default function UptimeGrid({ dateStrings, todayStr }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState>(null);
 
-  const dates = dateStrings.map(s => new Date(s + 'T12:00:00'));
+  const dates = useMemo(
+    () => dateStrings.map(s => new Date(s + 'T12:00:00')),
+    [dateStrings]
+  );
+  const statuses = useMemo(() => dates.map(d => getStatus(d)), [dates]);
 
-  const operationalDays = dates.filter(d => getStatus(d) === 'operational').length;
-  const degradedDays    = dates.filter(d => getStatus(d) === 'degraded').length;
-  const outageDays      = dates.filter(d => getStatus(d) === 'outage').length;
+  const operationalDays = statuses.filter(s => s === 'operational').length;
+  const degradedDays    = statuses.filter(s => s === 'degraded').length;
+  const outageDays      = statuses.filter(s => s === 'outage').length;
 
   return (
     <div className="bg-slate-800 rounded-lg border border-slate-700 px-4 py-4">
@@ -31,7 +35,7 @@ export default function UptimeGrid({ dateStrings, todayStr }: Props) {
         aria-label={`90-day uptime history: ${operationalDays} operational, ${degradedDays} degraded, ${outageDays} outage`}
       >
         {dates.map((d, i) => {
-          const st = getStatus(d);
+          const st = statuses[i];
           const c = STATUS[st];
           const ds = dateStrings[i];
           const isToday = ds === todayStr;
