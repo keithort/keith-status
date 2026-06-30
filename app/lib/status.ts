@@ -87,20 +87,20 @@ export function toDateStr(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-export function getStatus(date: Date, seed = ''): StatusKey {
-  const dow = date.getDay();
-  const ds = toDateStr(date);
-  if (dow === 0 || dow === 6 || HOLIDAYS.has(ds)) return 'operational';
+export function getStatus(date: Date, seed = '', phase?: WorkPhase): StatusKey {
+  const p = phase ?? getWorkPhase(date);
+  if (p === 'non-workday') return 'operational';
+  if (p === 'off-hours') return 'outage';
 
-  // Anchor to Monday of this week
+  // Working hours: hash-based logic
+  const dow = date.getDay();
   const weekAnchor = new Date(date);
   weekAnchor.setDate(date.getDate() - (dow - 1));
   const weekKey = toDateStr(weekAnchor) + seed;
 
   const wh = djb2(weekKey);
-  const redCount = (wh % 3) + 1; // 1–3 red days per week
+  const redCount = (wh % 3) + 1;
 
-  // Deterministic shuffle of Mon–Fri, pick first redCount as outage days
   const days = [1, 2, 3, 4, 5];
   for (let i = days.length - 1; i > 0; i--) {
     const j = djb2(weekKey + String(i)) % (i + 1);

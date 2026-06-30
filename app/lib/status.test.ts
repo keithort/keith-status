@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toDateStr, getEasternHour, getWorkPhase } from './status';
+import { toDateStr, getEasternHour, getWorkPhase, getStatus } from './status';
 
 describe('toDateStr', () => {
   it('formats a date as YYYY-MM-DD', () => {
@@ -73,5 +73,22 @@ describe('getWorkPhase', () => {
   // Monday midnight ET (04:00 UTC in summer) — dead of night
   it('returns off-hours at midnight ET on a workday', () => {
     expect(getWorkPhase(new Date('2026-06-29T04:00:00Z'))).toBe('off-hours');
+  });
+});
+
+describe('getStatus with explicit phase', () => {
+  const monday = new Date('2026-06-29T14:00:00Z'); // workday
+
+  it('returns outage when phase is off-hours', () => {
+    expect(getStatus(monday, '', 'off-hours')).toBe('outage');
+  });
+
+  it('returns operational when phase is non-workday', () => {
+    expect(getStatus(monday, '', 'non-workday')).toBe('operational');
+  });
+
+  it('runs hash logic when phase is working', () => {
+    const result = getStatus(monday, 'motivation', 'working');
+    expect(['operational', 'degraded', 'outage']).toContain(result);
   });
 });
