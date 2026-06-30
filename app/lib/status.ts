@@ -116,6 +116,36 @@ export function isNonWorkDay(date: Date): boolean {
   return dow === 0 || dow === 6 || HOLIDAYS.has(toDateStr(date));
 }
 
+export function getEasternHour(date: Date): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour: 'numeric',
+    hour12: false,
+  }).formatToParts(date);
+  return parseInt(parts.find(p => p.type === 'hour')!.value, 10);
+}
+
+export type WorkPhase = 'non-workday' | 'working' | 'off-hours';
+
+export function getWorkPhase(date: Date): WorkPhase {
+  const etParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    hour12: false,
+  }).formatToParts(date);
+  const get = (t: string) => etParts.find(p => p.type === t)!.value;
+  const ds = `${get('year')}-${get('month')}-${get('day')}`;
+  const hour = parseInt(get('hour'), 10);
+  // Derive day-of-week from the ET date (noon UTC ensures no TZ shift)
+  const dow = new Date(`${ds}T12:00:00Z`).getDay();
+
+  if (dow === 0 || dow === 6 || HOLIDAYS.has(ds)) return 'non-workday';
+  return hour >= 8 && hour < 17 ? 'working' : 'off-hours';
+}
+
 export function fmtShort(d: Date): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
