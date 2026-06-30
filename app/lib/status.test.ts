@@ -74,6 +74,16 @@ describe('getWorkPhase', () => {
   it('returns off-hours at midnight ET on a workday', () => {
     expect(getWorkPhase(new Date('2026-06-29T04:00:00Z'))).toBe('off-hours');
   });
+
+  it('returns working for a weekday at 9am EST (winter)', () => {
+    // 2026-01-15 14:00 UTC = 09:00 EST — Thursday inside working hours
+    expect(getWorkPhase(new Date('2026-01-15T14:00:00Z'))).toBe('working');
+  });
+
+  it('returns off-hours before 8am EST (winter)', () => {
+    // 2026-01-15 12:00 UTC = 07:00 EST — Thursday before working hours
+    expect(getWorkPhase(new Date('2026-01-15T12:00:00Z'))).toBe('off-hours');
+  });
 });
 
 describe('getStatus with explicit phase', () => {

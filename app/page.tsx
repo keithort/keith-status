@@ -149,7 +149,7 @@ export default function StatusPage() {
             {incidents.map((d, i) => {
               const dow = d.getDay();
               const title = INCIDENT_TITLES[dow];
-              const st = getStatus(d);
+              const st = getStatus(d, '', 'working');
               const c = STATUS[st];
               const isToday = toDateStr(d) === todayStr;
               return (
