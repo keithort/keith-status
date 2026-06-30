@@ -341,15 +341,6 @@ export default function StatusPage() {
           </div>
         </section>
 
-        {/* ── Footer ── */}
-        <footer className="border-t border-slate-700 pt-6 text-center space-y-1">
-          <p className="text-xs font-mono text-slate-400">
-            No scheduled maintenance · Uptime resets every Saturday at 00:00 local time
-          </p>
-          <p className="text-xs font-mono text-slate-400 mt-1">
-            Keith v1.0 · Personal Uptime Monitor · {today.getFullYear()}
-          </p>
-        </footer>
       </div>
     </main>
   );
