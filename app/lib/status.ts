@@ -62,7 +62,7 @@ export const STATUS: Record<StatusKey, StatusConfig> = {
   },
   outage: {
     label:  'Major Outage',
-    banner: 'Major Outage — Peak Obligation Hours',
+    banner: 'Major Outage — Outside Working Hours',
     emoji:  '🔴',
     pill:   'bg-red-600 text-white',
     text:   'text-red-400',
