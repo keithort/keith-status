@@ -1,8 +1,8 @@
 import UptimeGrid from '@/app/components/UptimeGrid';
 import {
-  getStatus, isNonWorkDay, toDateStr, fmtShort,
+  getStatus, getWorkPhase, toDateStr, fmtShort,
   STATUS, HOLIDAYS,
-  type StatusKey,
+  type StatusKey, type WorkPhase,
 } from '@/app/lib/status';
 
 type ComponentDef = {
@@ -35,12 +35,13 @@ const INCIDENT_TITLES: Record<number, string> = {
   5: 'Graceful degradation into weekend pre-load',
 };
 
-function getComponentStatus(component: ComponentDef, date: Date): StatusKey {
+function getComponentStatus(component: ComponentDef, date: Date, phase: WorkPhase): StatusKey {
   const { seed, alwaysOperational, alwaysDegraded, nonWorkDayStatus } = component;
   if (alwaysOperational) return 'operational';
   if (alwaysDegraded) return 'degraded';
-  if (nonWorkDayStatus && isNonWorkDay(date)) return nonWorkDayStatus;
-  return getStatus(date, seed);
+  if (phase === 'non-workday') return nonWorkDayStatus ?? 'operational';
+  if (phase === 'off-hours') return 'outage';
+  return getStatus(date, seed, 'working');
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -54,7 +55,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export default function StatusPage() {
   const today = new Date();
   const todayStr = toDateStr(today);
-  const overallStatus = getStatus(today);
+  const phase = getWorkPhase(today);
+  const overallStatus = getStatus(today, '', phase);
   const s = STATUS[overallStatus];
 
   const fmtLong = (d: Date) =>
@@ -111,7 +113,7 @@ export default function StatusPage() {
           <div className="bg-slate-800 rounded-lg border border-slate-700 divide-y divide-slate-700">
             {COMPONENTS.map((component) => {
               const { name } = component;
-              const st = getComponentStatus(component, today);
+              const st = getComponentStatus(component, today, phase);
               const c = STATUS[st];
               return (
                 <div key={name} className="flex items-center justify-between px-4 py-3">
@@ -147,7 +149,7 @@ export default function StatusPage() {
             {incidents.map((d, i) => {
               const dow = d.getDay();
               const title = INCIDENT_TITLES[dow];
-              const st = getStatus(d);
+              const st = getStatus(d, '', 'working');
               const c = STATUS[st];
               const isToday = toDateStr(d) === todayStr;
               return (

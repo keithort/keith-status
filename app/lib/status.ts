@@ -62,7 +62,7 @@ export const STATUS: Record<StatusKey, StatusConfig> = {
   },
   outage: {
     label:  'Major Outage',
-    banner: 'Major Outage — Peak Obligation Hours',
+    banner: 'Major Outage — Outside Working Hours',
     emoji:  '🔴',
     pill:   'bg-red-600 text-white',
     text:   'text-red-400',
@@ -87,20 +87,20 @@ export function toDateStr(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-export function getStatus(date: Date, seed = ''): StatusKey {
-  const dow = date.getDay();
-  const ds = toDateStr(date);
-  if (dow === 0 || dow === 6 || HOLIDAYS.has(ds)) return 'operational';
+export function getStatus(date: Date, seed = '', phase?: WorkPhase): StatusKey {
+  const p = phase ?? getWorkPhase(date);
+  if (p === 'non-workday') return 'operational';
+  if (p === 'off-hours') return 'outage';
 
-  // Anchor to Monday of this week
+  // Working hours: hash-based logic
+  const dow = date.getDay();
   const weekAnchor = new Date(date);
   weekAnchor.setDate(date.getDate() - (dow - 1));
   const weekKey = toDateStr(weekAnchor) + seed;
 
   const wh = djb2(weekKey);
-  const redCount = (wh % 3) + 1; // 1–3 red days per week
+  const redCount = (wh % 3) + 1;
 
-  // Deterministic shuffle of Mon–Fri, pick first redCount as outage days
   const days = [1, 2, 3, 4, 5];
   for (let i = days.length - 1; i > 0; i--) {
     const j = djb2(weekKey + String(i)) % (i + 1);
@@ -114,6 +114,36 @@ export function getStatus(date: Date, seed = ''): StatusKey {
 export function isNonWorkDay(date: Date): boolean {
   const dow = date.getDay();
   return dow === 0 || dow === 6 || HOLIDAYS.has(toDateStr(date));
+}
+
+export function getEasternHour(date: Date): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour: 'numeric',
+    hour12: false,
+  }).formatToParts(date);
+  return parseInt(parts.find(p => p.type === 'hour')!.value, 10);
+}
+
+export type WorkPhase = 'non-workday' | 'working' | 'off-hours';
+
+export function getWorkPhase(date: Date): WorkPhase {
+  const etParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    hour12: false,
+  }).formatToParts(date);
+  const get = (t: string) => etParts.find(p => p.type === t)!.value;
+  const ds = `${get('year')}-${get('month')}-${get('day')}`;
+  const hour = parseInt(get('hour'), 10);
+  // Derive day-of-week from the ET date (noon UTC ensures no TZ shift)
+  const dow = new Date(`${ds}T12:00:00Z`).getDay();
+
+  if (dow === 0 || dow === 6 || HOLIDAYS.has(ds)) return 'non-workday';
+  return hour >= 8 && hour < 17 ? 'working' : 'off-hours';
 }
 
 export function fmtShort(d: Date): string {
