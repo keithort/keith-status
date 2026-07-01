@@ -125,6 +125,24 @@ export function getEasternHour(date: Date): number {
   return parseInt(parts.find(p => p.type === 'hour')!.value, 10);
 }
 
+export function getEasternDateStr(date: Date): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const get = (t: string) => parts.find(p => p.type === t)!.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+// Anchors the ET calendar day at noon UTC, so local Date methods
+// (getDate, setDate, getDay, toLocaleDateString) can't roll it onto
+// an adjacent day no matter what timezone the server runs in.
+export function toEasternDate(date: Date): Date {
+  return new Date(`${getEasternDateStr(date)}T12:00:00Z`);
+}
+
 export type WorkPhase = 'non-workday' | 'working' | 'off-hours';
 
 export function getWorkPhase(date: Date): WorkPhase {
