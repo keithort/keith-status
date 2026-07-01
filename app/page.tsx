@@ -1,6 +1,6 @@
 import UptimeGrid from '@/app/components/UptimeGrid';
 import {
-  getStatus, getWorkPhase, toDateStr, fmtShort,
+  getStatus, getWorkPhase, toDateStr, toEasternDate, fmtShort,
   STATUS, HOLIDAYS,
   type StatusKey, type WorkPhase,
 } from '@/app/lib/status';
@@ -60,9 +60,12 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export default function StatusPage() {
-  const today = new Date();
+  const now = new Date();
+  // Calendar day, per Eastern time — not the server's local date, which
+  // is ahead of ET for several hours a day (e.g. Vercel runs in UTC).
+  const today = toEasternDate(now);
   const todayStr = toDateStr(today);
-  const phase = getWorkPhase(today);
+  const phase = getWorkPhase(now);
   const overallStatus = getStatus(today, '', phase);
   const s = STATUS[overallStatus];
 

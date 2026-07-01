@@ -1,9 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import { toDateStr, getEasternHour, getWorkPhase, getStatus } from './status';
+import { toDateStr, getEasternHour, getEasternDateStr, toEasternDate, getWorkPhase, getStatus } from './status';
 
 describe('toDateStr', () => {
   it('formats a date as YYYY-MM-DD', () => {
     expect(toDateStr(new Date('2026-06-29T12:00:00Z'))).toBe('2026-06-29');
+  });
+});
+
+describe('getEasternDateStr', () => {
+  it('stays on the prior day while UTC has already rolled over', () => {
+    // 2026-07-01 01:30 UTC = 2026-06-30 21:30 EDT — still June 30 in ET
+    expect(getEasternDateStr(new Date('2026-07-01T01:30:00Z'))).toBe('2026-06-30');
+  });
+
+  it('matches the UTC date when both agree', () => {
+    expect(getEasternDateStr(new Date('2026-06-29T14:00:00Z'))).toBe('2026-06-29');
+  });
+});
+
+describe('toEasternDate', () => {
+  it('anchors to the ET calendar day even after UTC midnight', () => {
+    const anchored = toEasternDate(new Date('2026-07-01T01:30:00Z'));
+    expect(toDateStr(anchored)).toBe('2026-06-30');
   });
 });
 
