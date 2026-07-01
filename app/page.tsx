@@ -5,6 +5,10 @@ import {
   type StatusKey, type WorkPhase,
 } from '@/app/lib/status';
 
+// Status depends on the real current time, so this route can't be
+// prerendered once at build time — it must be evaluated per request.
+export const dynamic = 'force-dynamic';
+
 type ComponentDef = {
   name:               string;
   seed:               string;
