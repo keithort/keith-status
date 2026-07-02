@@ -26,6 +26,36 @@ export const HOLIDAYS = new Set([
   '2027-12-24', // Christmas (observed; Dec 25 falls on Saturday)
 ]);
 
+// Intl.DateTimeFormat construction is expensive; these are stateless,
+// so build them once at module scope and share across calls.
+const ET_HOUR_FMT = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  hour: 'numeric',
+  hour12: false,
+});
+
+const ET_DATE_FMT = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+const ET_DATE_HOUR_FMT = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: 'numeric',
+  hour12: false,
+});
+
+const SHORT_DATE_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
 export type StatusKey = 'operational' | 'degraded' | 'outage';
 
 export type StatusConfig = {
@@ -117,21 +147,12 @@ export function isNonWorkDay(date: Date): boolean {
 }
 
 export function getEasternHour(date: Date): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    hour: 'numeric',
-    hour12: false,
-  }).formatToParts(date);
+  const parts = ET_HOUR_FMT.formatToParts(date);
   return parseInt(parts.find(p => p.type === 'hour')!.value, 10);
 }
 
 export function getEasternDateStr(date: Date): string {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
+  const parts = ET_DATE_FMT.formatToParts(date);
   const get = (t: string) => parts.find(p => p.type === t)!.value;
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
@@ -146,14 +167,7 @@ export function toEasternDate(date: Date): Date {
 export type WorkPhase = 'non-workday' | 'working' | 'off-hours';
 
 export function getWorkPhase(date: Date): WorkPhase {
-  const etParts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: 'numeric',
-    hour12: false,
-  }).formatToParts(date);
+  const etParts = ET_DATE_HOUR_FMT.formatToParts(date);
   const get = (t: string) => etParts.find(p => p.type === t)!.value;
   const ds = `${get('year')}-${get('month')}-${get('day')}`;
   const hour = parseInt(get('hour'), 10);
@@ -165,5 +179,5 @@ export function getWorkPhase(date: Date): WorkPhase {
 }
 
 export function fmtShort(d: Date): string {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return SHORT_DATE_FMT.format(d);
 }
