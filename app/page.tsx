@@ -1,7 +1,7 @@
 import UptimeGrid from '@/app/components/UptimeGrid';
 import {
-  getStatus, getWorkPhase, toDateStr, toEasternDate, fmtShort,
-  STATUS, HOLIDAYS,
+  getStatus, getWorkPhase, isNonWorkDay, toDateStr, toEasternDate, fmtShort,
+  STATUS,
   type StatusKey, type WorkPhase,
 } from '@/app/lib/status';
 
@@ -70,20 +70,24 @@ export default function StatusPage() {
   const s = STATUS[overallStatus];
 
 
-  // Rolling 90-day grid, oldest → newest
-  const gridDateStrings = Array.from({ length: 90 }, (_, i) => {
+  // Rolling 90-day grid, oldest → newest. Statuses are day-level (an
+  // explicit phase, never the hour), computed here on the server so the
+  // grid can't vary with the viewer's timezone or time of visit.
+  const gridCells = Array.from({ length: 90 }, (_, i) => {
     const d = new Date(today);
     d.setDate(d.getDate() - (89 - i));
-    return toDateStr(d);
+    return {
+      label:   fmtShort(d),
+      status:  getStatus(d, '', isNonWorkDay(d) ? 'non-workday' : 'working'),
+      isToday: toDateStr(d) === todayStr,
+    };
   });
 
   // Last 5 workdays for incidents (working backwards from today, inclusive)
   const incidents: Date[] = [];
   const cur = new Date(today);
   while (incidents.length < 5) {
-    const dow = cur.getDay();
-    const ds = toDateStr(cur);
-    if (dow !== 0 && dow !== 6 && !HOLIDAYS.has(ds)) {
+    if (!isNonWorkDay(cur)) {
       incidents.push(new Date(cur));
     }
     cur.setDate(cur.getDate() - 1);
@@ -147,7 +151,7 @@ export default function StatusPage() {
         {/* ── 90-Day Uptime Grid ── */}
         <section className="mb-8">
           <SectionLabel>90-Day Uptime History</SectionLabel>
-          <UptimeGrid dateStrings={gridDateStrings} todayStr={todayStr} />
+          <UptimeGrid cells={gridCells} />
         </section>
 
         {/* ── Incident Log ── */}
