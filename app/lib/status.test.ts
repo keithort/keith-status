@@ -107,8 +107,15 @@ describe('getWorkPhase', () => {
 describe('getStatus with explicit phase', () => {
   const monday = new Date('2026-06-29T14:00:00Z'); // workday
 
-  it('returns outage when phase is off-hours', () => {
-    expect(getStatus(monday, '', 'off-hours')).toBe('outage');
+  // Off-hours means Keith isn't working — components go red, but the
+  // system as a whole is fine.
+  it('returns operational when phase is off-hours', () => {
+    expect(getStatus(monday, '', 'off-hours')).toBe('operational');
+  });
+
+  it('returns operational when phase is derived from an off-hours time', () => {
+    // 2026-06-29 21:00 UTC = 5pm EDT Monday — just past working hours
+    expect(getStatus(new Date('2026-06-29T21:00:00Z'))).toBe('operational');
   });
 
   it('returns operational when phase is non-workday', () => {
