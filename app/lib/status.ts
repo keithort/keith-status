@@ -92,7 +92,7 @@ export const STATUS: Record<StatusKey, StatusConfig> = {
   },
   outage: {
     label:  'Major Outage',
-    banner: 'Major Outage — Outside Working Hours',
+    banner: 'Major Outage — Keith.exe Stopped Responding',
     emoji:  '🔴',
     pill:   'bg-red-600 text-white',
     text:   'text-red-400',
@@ -119,8 +119,10 @@ export function toDateStr(date: Date): string {
 
 export function getStatus(date: Date, seed = '', phase?: WorkPhase): StatusKey {
   const p = phase ?? getWorkPhase(date);
+  // Off-hours and non-workdays are green: components read red because
+  // Keith isn't working, but that means the system overall is healthy.
   if (p === 'non-workday') return 'operational';
-  if (p === 'off-hours') return 'outage';
+  if (p === 'off-hours') return 'operational';
 
   // Working hours: hash-based logic
   const dow = date.getDay();
