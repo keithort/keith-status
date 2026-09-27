@@ -14,6 +14,7 @@ type ComponentDef = {
   seed:               string;
   alwaysOperational?: boolean;
   alwaysDegraded?:    boolean;
+  decommissioned?:    boolean;
   nonWorkDayStatus?:  StatusKey;
 };
 
@@ -28,7 +29,7 @@ const COMPONENTS: ComponentDef[] = [
   { name: 'Will to Open Slack',               seed: 'slack',    nonWorkDayStatus: 'outage' },
   { name: 'Meme Generation Service',          seed: 'memes',    alwaysOperational: true },
   { name: 'Sarcasm Engine',                   seed: 'sarcasm',  alwaysOperational: true },
-  { name: 'Westhafer Sarcasm Load Balancing', seed: 'westhafer', alwaysDegraded: true },
+  { name: 'Westhafer Sarcasm Load Balancing', seed: 'westhafer', decommissioned: true },
 ];
 
 const INCIDENT_TITLES: Record<number, string> = {
@@ -40,9 +41,10 @@ const INCIDENT_TITLES: Record<number, string> = {
 };
 
 function getComponentStatus(component: ComponentDef, date: Date, phase: WorkPhase): StatusKey {
-  const { seed, alwaysOperational, alwaysDegraded, nonWorkDayStatus } = component;
+  const { seed, alwaysOperational, alwaysDegraded, decommissioned, nonWorkDayStatus } = component;
   if (alwaysOperational) return 'operational';
   if (alwaysDegraded) return 'degraded';
+  if (decommissioned) return 'decommissioned';
   if (phase === 'non-workday') return nonWorkDayStatus ?? 'operational';
   if (phase === 'off-hours') return 'outage';
   return getStatus(date, seed, 'working');
@@ -138,8 +140,8 @@ export default function StatusPage() {
               );
             })}
           </div>
-          <div className="flex items-center gap-5 mt-3 px-1">
-            {(['operational', 'degraded', 'outage'] as StatusKey[]).map((k) => (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 px-1">
+            {(['operational', 'degraded', 'outage', 'decommissioned'] as StatusKey[]).map((k) => (
               <span key={k} className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
                 <span className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${STATUS[k].dot}`} />
                 {STATUS[k].label}

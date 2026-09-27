@@ -56,7 +56,7 @@ const SHORT_DATE_FMT = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 });
 
-export type StatusKey = 'operational' | 'degraded' | 'outage';
+export type StatusKey = 'operational' | 'degraded' | 'outage' | 'decommissioned';
 
 export type StatusConfig = {
   label:  string;
@@ -99,6 +99,16 @@ export const STATUS: Record<StatusKey, StatusConfig> = {
     dot:    'bg-red-500',
     square: 'bg-red-600',
     card:   'bg-red-950 border-red-800',
+  },
+  decommissioned: {
+    label:  'Decommissioned',
+    banner: 'Decommissioned — Service Permanently Retired',
+    emoji:  '⚫',
+    pill:   'bg-slate-600 text-white',
+    text:   'text-slate-400',
+    dot:    'bg-slate-500',
+    square: 'bg-slate-600',
+    card:   'bg-slate-950 border-slate-700',
   },
 };
 
