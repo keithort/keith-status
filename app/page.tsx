@@ -13,7 +13,7 @@ type ComponentDef = {
   name:               string;
   seed:               string;
   alwaysOperational?: boolean;
-  alwaysDegraded?:    boolean;
+  decommissioned?:    boolean;
   nonWorkDayStatus?:  StatusKey;
 };
 
@@ -28,7 +28,7 @@ const COMPONENTS: ComponentDef[] = [
   { name: 'Will to Open Slack',               seed: 'slack',    nonWorkDayStatus: 'outage' },
   { name: 'Meme Generation Service',          seed: 'memes',    alwaysOperational: true },
   { name: 'Sarcasm Engine',                   seed: 'sarcasm',  alwaysOperational: true },
-  { name: 'Westhafer Sarcasm Load Balancing', seed: 'westhafer', alwaysDegraded: true },
+  { name: 'Westhafer Sarcasm Load Balancing', seed: 'westhafer', decommissioned: true },
 ];
 
 const INCIDENT_TITLES: Record<number, string> = {
@@ -40,9 +40,9 @@ const INCIDENT_TITLES: Record<number, string> = {
 };
 
 function getComponentStatus(component: ComponentDef, date: Date, phase: WorkPhase): StatusKey {
-  const { seed, alwaysOperational, alwaysDegraded, nonWorkDayStatus } = component;
+  const { seed, alwaysOperational, decommissioned, nonWorkDayStatus } = component;
   if (alwaysOperational) return 'operational';
-  if (alwaysDegraded) return 'degraded';
+  if (decommissioned) return 'outage';
   if (phase === 'non-workday') return nonWorkDayStatus ?? 'operational';
   if (phase === 'off-hours') return 'outage';
   return getStatus(date, seed, 'working');
@@ -127,12 +127,13 @@ export default function StatusPage() {
               const { name } = component;
               const st = getComponentStatus(component, today, phase);
               const c = STATUS[st];
+              const label = component.decommissioned ? 'Decommissioned' : c.label;
               return (
                 <div key={name} className="flex items-center justify-between px-4 py-3">
                   <span className="text-sm font-mono text-slate-200">{name}</span>
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
-                    <span className={`text-xs font-mono ${c.text} hidden sm:inline`}>{c.label}</span>
+                    <span className={`text-xs font-mono ${c.text} hidden sm:inline`}>{label}</span>
                   </div>
                 </div>
               );
