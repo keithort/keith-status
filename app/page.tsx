@@ -42,7 +42,7 @@ const INCIDENT_TITLES: Record<number, string> = {
 function getComponentStatus(component: ComponentDef, date: Date, phase: WorkPhase): StatusKey {
   const { seed, alwaysOperational, decommissioned, nonWorkDayStatus } = component;
   if (alwaysOperational) return 'operational';
-  if (decommissioned) return 'outage';
+  if (decommissioned) return 'decommissioned';
   if (phase === 'non-workday') return nonWorkDayStatus ?? 'operational';
   if (phase === 'off-hours') return 'outage';
   return getStatus(date, seed, 'working');
@@ -127,20 +127,19 @@ export default function StatusPage() {
               const { name } = component;
               const st = getComponentStatus(component, today, phase);
               const c = STATUS[st];
-              const label = component.decommissioned ? 'Decommissioned' : c.label;
               return (
                 <div key={name} className="flex items-center justify-between px-4 py-3">
                   <span className="text-sm font-mono text-slate-200">{name}</span>
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`} />
-                    <span className={`text-xs font-mono ${c.text} hidden sm:inline`}>{label}</span>
+                    <span className={`text-xs font-mono ${c.text} hidden sm:inline`}>{c.label}</span>
                   </div>
                 </div>
               );
             })}
           </div>
-          <div className="flex items-center gap-5 mt-3 px-1">
-            {(['operational', 'degraded', 'outage'] as StatusKey[]).map((k) => (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 px-1">
+            {(['operational', 'degraded', 'outage', 'decommissioned'] as StatusKey[]).map((k) => (
               <span key={k} className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
                 <span className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${STATUS[k].dot}`} />
                 {STATUS[k].label}
