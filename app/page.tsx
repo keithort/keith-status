@@ -13,6 +13,7 @@ type ComponentDef = {
   name:               string;
   seed:               string;
   alwaysOperational?: boolean;
+  alwaysDegraded?:    boolean;
   decommissioned?:    boolean;
   nonWorkDayStatus?:  StatusKey;
 };
@@ -40,8 +41,9 @@ const INCIDENT_TITLES: Record<number, string> = {
 };
 
 function getComponentStatus(component: ComponentDef, date: Date, phase: WorkPhase): StatusKey {
-  const { seed, alwaysOperational, decommissioned, nonWorkDayStatus } = component;
+  const { seed, alwaysOperational, alwaysDegraded, decommissioned, nonWorkDayStatus } = component;
   if (alwaysOperational) return 'operational';
+  if (alwaysDegraded) return 'degraded';
   if (decommissioned) return 'decommissioned';
   if (phase === 'non-workday') return nonWorkDayStatus ?? 'operational';
   if (phase === 'off-hours') return 'outage';
